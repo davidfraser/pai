@@ -106,11 +106,14 @@ async def run_loop():
     if alarm:
         await exit_handler()
 
+class GracefulExit(SystemExit):
+    code = 1
+
 
 def main(args):
     global alarm, interface_manager
 
-    time.tzset()
+    if hasattr(time, 'tzset'): time.tzset()
     if "config" in args and args.config is not None:
         import os
 
@@ -132,11 +135,20 @@ def main(args):
     # Start interacting with the alarm
     alarm = Paradox()
     loop = asyncio.get_event_loop()
+
+    def raise_graceful_exit(*args):
+        loop.stop()
+        logger.info("Gracefully shutdown")
+        raise GracefulExit()
+
     for signame in ("SIGINT", "SIGTERM"):
         sig = getattr(signal, signame)
-        loop.add_signal_handler(
-            sig, lambda: asyncio.ensure_future(exit_handler(signame))
-        )
+        if sys.platform.startswith('win'):
+            signal.signal(sig, raise_graceful_exit)
+        else:
+            loop.add_signal_handler(
+                sig, lambda: asyncio.ensure_future(exit_handler(signame))
+            )
 
     interface_manager = InterfaceManager(alarm, config=cfg)
     interface_manager.start()
