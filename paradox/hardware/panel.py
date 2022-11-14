@@ -314,8 +314,14 @@ class Panel:
     def initialize_communication(self, password):
         raise NotImplementedError("override initialize_communication in a subclass")
 
-    def get_status_requests(self) -> typing.Iterable[typing.Awaitable]:
-        return (self.request_status(i) for i in self.status_request_addresses)
+    def get_status_requests(self, should_check_map=None) -> typing.Iterable[typing.Awaitable]:
+        # should_check_map should be a dictionary mapping memory area to a function should_check()
+        # missing items in this will not be checked
+        if should_check_map:
+            return (self.request_status(i) for i in self.status_request_addresses
+                    if should_check_map.get(i) is not None and should_check_map[i]())
+        else:
+            return (self.request_status(i) for i in self.status_request_addresses)
 
     @abstractmethod
     async def request_status(self, nr) -> typing.Optional[Container]:

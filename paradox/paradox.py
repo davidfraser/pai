@@ -31,6 +31,9 @@ logger = logging.getLogger("PAI").getChild(__name__)
 
 
 class Paradox:
+    # this can be overridden to set particular strategies on when different memory banks should be checked
+    should_check_map = None
+    
     def __init__(self, retries=3):
         self.panel: Panel = None
         self._connection: Connection = None
@@ -285,7 +288,7 @@ class Paradox:
             if self.run_state == RunState.RUN:
                 try:
                     await self.busy.acquire()
-                    result = await asyncio.gather(*self.panel.get_status_requests())
+                    result = await asyncio.gather(*self.panel.get_status_requests(self.should_check_map))
                     merged = deep_merge(*result, extend_lists=True, initializer={})
                     self.work_loop.call_soon(self._process_status, merged)
                     replies_missing = max(0, replies_missing - 1)
