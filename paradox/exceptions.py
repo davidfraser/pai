@@ -53,7 +53,7 @@ def async_loop_unhandled_exception_handler(loop, context):
 
     task = context.get("task")
     if task:
-        msg += ", task: %s" % task
+        msg = "%s, task: %s" % (msg, task)
 
     logger.exception(
         "Unhandled exception in async loop(%s): %s", loop, msg, exc_info=exception

@@ -300,6 +300,8 @@ class Paradox:
                         logger.error("Lost communication with panel")
                         await self.disconnect()
                         return
+                except asyncio.CancelledError as e:
+                    logger.warning("Asyncio CancelledError: %s", e)
                 except:
                     logger.exception("Loop")
                 finally:
